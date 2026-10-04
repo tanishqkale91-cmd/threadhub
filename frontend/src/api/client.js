@@ -1,0 +1,61 @@
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const TOKEN_KEY = 'threadhub_token';
+
+export async function apiClient(endpoint, { body, headers: customHeaders, ...customConfig } = {}) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...customHeaders,
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const config = {
+    method: body ? 'POST' : 'GET',
+    ...customConfig,
+    headers,
+  };
+
+  if (body) {
+    config.body = JSON.stringify(body);
+  }
+
+  const url = `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+
+  let response;
+  try {
+    response = await fetch(url, config);
+  } catch (error) {
+    throw new Error('Network error. Unable to connect to backend server.');
+  }
+
+  let data = null;
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+  }
+
+  if (!response.ok) {
+    const errorMessage = data?.message || data?.error || `Request failed with status ${response.status}`;
+    const error = new Error(errorMessage);
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
+
+  return data;
+}
+
+export const api = {
+  get: (endpoint, options) => apiClient(endpoint, { ...options, method: 'GET' }),
+  post: (endpoint, body, options) => apiClient(endpoint, { ...options, method: 'POST', body }),
+  put: (endpoint, body, options) => apiClient(endpoint, { ...options, method: 'PUT', body }),
+  delete: (endpoint, options) => apiClient(endpoint, { ...options, method: 'DELETE' }),
+};
