@@ -69,6 +69,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/communities").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/communities/{id:\\d+}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/communities/name/{name}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/communities/{communityId:\\d+}/members").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
