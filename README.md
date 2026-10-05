@@ -166,75 +166,25 @@ These are not blockers for the current deployment, but they are the obvious engi
 
 ## Planned Features
 
-### Posts
-- Create text posts inside communities
-- Edit posts
-- Delete posts
-- Post detail pages
-- Post feeds
-- Sort posts by newest, popular, and relevant
-
-### Comments
-- Create comments
-- Edit comments
-- Delete comments
-- Nested replies
-- Comment sorting
-
-### Voting
-- Upvotes and downvotes
-- Vote toggling
-- Vote counts
-- Score-based post ranking
-- Score-based comment ranking
-
-### User Profiles
-- Public user profiles
-- User post history
-- User comment history
-- Community membership history
-- Profile editing
-
-### Community Management
-- Community descriptions
-- Community rules
-- Owner/moderator roles
-- Moderator permissions
-- Community settings
-- Moderator management
-- Community deletion/deactivation
-
-### Feed & Discovery
-- Home feed
-- Personalized community feed
-- Trending posts
-- Popular communities
-- Search for posts and communities
-- Filtering and sorting
-
-### Moderation
-- Report posts/comments
-- Moderator review queue
-- Remove posts/comments
-- Ban users from communities
-- Moderator audit logs
-
-### Notifications
-- Comment notifications
-- Reply notifications
-- Vote notifications
-- Community activity notifications
-- Mention notifications
-
-### Advanced Features
-- Markdown post editor
-- Image/media posts
-- Saved posts
-- User following
-- Community subscriptions
-- Full-text search
-- Real-time notifications
-- WebSocket-based live updates
+Users
+  ↓
+Communities
+  ↓
+Posts          ← NEXT
+  ↓
+Comments
+  ↓
+Voting
+  ↓
+Home / Community Feed
+  ↓
+Profiles
+  ↓
+Search
+  ↓
+Notifications
+  ↓
+Moderation
 
 ## Security Improvements
 
@@ -365,32 +315,7 @@ http://localhost:5173
 [ ] Advanced security
 ```
 ### Issues
-UI / UX Issues
-- [ ] Add consistent spacing, typography, border radius, and component sizing across the application.
-- [ ] Create a proper design system for colors, buttons, inputs, cards, badges, modals, and navigation.
-- [ ] Improve visual hierarchy on the home page.
-- [ ] Improve the communities page with better cards, metadata, member counts, and community descriptions.
-- [ ] Improve the community detail page with a clearer header, community information, and membership controls.
-- [ ] Add proper hover, focus, active, and disabled states to interactive elements.
-- [ ] Add skeleton loaders instead of generic loading text.
-Frontend Architecture
-- [ ] Centralize API error handling.
-- [ ] Add an HTTP/API abstraction that consistently handles 401, 403, 404, 409, and 500.
-- [ ] Avoid duplicated API request logic.
-- [ ] Add reusable form components and validation utilities.
-- [ ] Add reusable modal and confirmation components.
-- [ ] Add reusable pagination/infinite-scroll components.
-- [ ] Add frontend unit/component tests.
-- [ ] Add end-to-end tests for authentication and major user flows.
-- [ ] Add route-level error handling.
-- [ ] Improve state management as the number of features grows.
-- [ ] Add optimistic UI updates for actions such as voting and joining communities where appropriate.
-Backend/API Issues
-- [ ] Standardize all API response formats.
-- [ ] Introduce a global exception handler with @RestControllerAdvice.
-- [ ] Return appropriate HTTP status codes consistently.
-- [ ] Add pagination to collection endpoints.
-- [ ] Add sorting and filtering support.
+
 ## License
 
 This project is currently under active development. Add a formal open-source license before treating the repository as a publicly licensed project.
