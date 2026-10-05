@@ -6,7 +6,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
 @TestPropertySource(properties = {
-        "JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+        "jwt.secret=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
 })
 class ThreadhubApplicationTests {
 
