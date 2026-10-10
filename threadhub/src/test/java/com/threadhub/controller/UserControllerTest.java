@@ -20,7 +20,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -29,6 +33,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -54,6 +59,7 @@ class UserControllerTest {
 
     private UserResponse sampleResponse;
     private String validJwtToken;
+    private String expiredJwtToken;
 
     @BeforeEach
     void setUp() {
@@ -77,6 +83,18 @@ class UserControllerTest {
                 .build();
 
         validJwtToken = jwtService.generateToken(user);
+
+        Instant pastIssuedAt = Instant.now().minusSeconds(600);
+        Instant pastExpiresAt = Instant.now().minusSeconds(300);
+        JwtClaimsSet expiredClaims = JwtClaimsSet.builder()
+                .subject("1")
+                .claim("username", "jane_doe")
+                .claim("email", "jane@example.com")
+                .issuedAt(pastIssuedAt)
+                .expiresAt(pastExpiresAt)
+                .build();
+        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
+        expiredJwtToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, expiredClaims)).getTokenValue();
     }
 
     @Test
@@ -120,6 +138,19 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("Validation failed"))
                 .andExpect(jsonPath("$.details").isArray());
+    }
+
+    @Test
+    @DisplayName("POST /api/users - Should return 400 Bad Request when JSON request body is malformed")
+    void shouldReturnBadRequestWhenJsonIsMalformed() throws Exception {
+        String malformedJson = "{ \"username\": \"jane\", \"email\": }";
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(malformedJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Malformed JSON request body"));
     }
 
     @Test
@@ -182,6 +213,14 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/users/{id} - Should reject expired Bearer token with 401 Unauthorized")
+    void shouldRejectExpiredBearerToken() throws Exception {
+        mockMvc.perform(get("/api/users/1")
+                        .header("Authorization", "Bearer " + expiredJwtToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("GET /api/users/{id} - Should accept requests with valid Bearer token and return 200 OK")
     void shouldAcceptValidBearerToken() throws Exception {
         when(userService.getUserById(1L)).thenReturn(sampleResponse);
@@ -192,6 +231,16 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.username").value("jane_doe"))
                 .andExpect(jsonPath("$.email").value("jane@example.com"));
+    }
+
+    @Test
+    @DisplayName("GET /api/users/{id} - Should return 400 Bad Request when path parameter type is invalid")
+    void shouldReturnBadRequestOnTypeMismatch() throws Exception {
+        mockMvc.perform(get("/api/users/invalid-id")
+                        .header("Authorization", "Bearer " + validJwtToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Invalid parameter type for: id"));
     }
 
     @Test

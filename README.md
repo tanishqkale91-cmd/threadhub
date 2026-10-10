@@ -1,8 +1,8 @@
-# ThreadHub
+# ThreadHub — Community Discussion Platform
 
-ThreadHub is a Reddit-inspired community discussion platform built as a full-stack web application. It provides the foundation for users to create accounts, authenticate securely, create and discover communities, join or leave communities, and manage community membership.
+ThreadHub is a Reddit-inspired community discussion platform built with Spring Boot, PostgreSQL, React, Vite, and Tailwind CSS. It provides the foundation for users to create accounts, authenticate securely, create and discover communities, join or leave communities, and manage community membership.
 
-The project is designed as a standalone social discussion platform. Posts, comments, voting, feeds, moderation, and other Reddit-style functionality are planned as future improvements.
+---
 
 ## Live Deployment
 
@@ -10,312 +10,182 @@ The project is designed as a standalone social discussion platform. Posts, comme
 - **Backend API:** https://threadhub-production.up.railway.app
 - **Repository:** https://github.com/tanishqkale91-cmd/threadhub
 
-## Current Features
+---
 
-### Authentication & Users
-- User registration
-- User login
-- JWT-based authentication
-- Stateless Spring Security authentication
-- BCrypt password hashing
-- Protected API endpoints
-- Persistent authentication on the frontend
+## 1. Application Architecture
 
-### Communities
-- Create communities
-- View communities
-- View individual community details
-- Search/retrieve communities by name
-- Join communities
-- Leave communities
-- Automatic owner membership when creating a community
-- Owner cannot leave their own community
-- View community members
-- Community ownership and membership roles
-
-### Frontend
-- React + Vite
-- Tailwind CSS
-- React Router
-- Authentication context
-- Protected routes
-- Community listing and detail pages
-- Login and registration pages
-- API integration with the Spring Boot backend
-- Production deployment on Vercel
-
-### Backend
-- Spring Boot 4.1.1
-- Java 25
-- Spring Security
-- Spring Data JPA
-- Hibernate
-- PostgreSQL
-- JWT authentication
-- Bean validation
-- Maven
-- Production deployment on Railway
-
-### Database
-- PostgreSQL
-- Local development with PostgreSQL
-- Production database hosted on Neon PostgreSQL
-- JPA/Hibernate schema management
-
-## Architecture
-
-```text
-┌─────────────────────────┐
-│       React Frontend    │
-│     Vite + Tailwind     │
-│                         │
-│        Vercel           │
-└────────────┬────────────┘
-             │ HTTPS / REST API
-             ▼
-┌─────────────────────────┐
-│    Spring Boot Backend  │
-│                         │
-│ Security + JWT + JPA    │
-│                         │
-│        Railway          │
-└────────────┬────────────┘
-             │ JDBC
-             ▼
-┌─────────────────────────┐
-│    PostgreSQL Database  │
-│                         │
-│         Neon            │
-└─────────────────────────┘
 ```
-
-## Project Structure
-
-```text
 threadhub/
-├── frontend/                 # React + Vite frontend
+├── .github/workflows/ci.yml       # GitHub Actions CI pipeline
+├── frontend/                       # React 19 + Vite 8 + Tailwind CSS v4 frontend
 │   ├── src/
-│   │   ├── api/
-│   │   ├── components/
-│   │   ├── context/
-│   │   ├── pages/
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   └── package.json
-│
-├── threadhub/                # Spring Boot backend
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/com/threadhub/
-│   │   │   └── resources/
-│   │   └── test/
-│   ├── pom.xml
-│   └── mvnw
-│
-└── README.md
+│   │   ├── api/                   # API client layer (authApi, communityApi, userApi)
+│   │   ├── components/            # Reusable UI components & layouts
+│   │   ├── context/               # AuthContext for session management
+│   │   └── pages/                 # Route components (Home, Communities, Auth)
+│   ├── package.json
+│   └── vite.config.js
+└── threadhub/                      # Java 25 + Spring Boot 4.1.1 backend
+    ├── src/main/java/com/threadhub/
+    │   ├── config/                # SecurityConfig & CORS configuration
+    │   ├── controller/            # Auth, User, and Community REST controllers
+    │   ├── dto/                   # Request/Response contracts & Bean Validation
+    │   ├── exception/             # GlobalExceptionHandler & custom domain exceptions
+    │   ├── model/                 # JPA Entities (User, Community, CommunityMember)
+    │   ├── repository/            # Spring Data JPA repositories
+    │   ├── security/              # JwtService & SecurityUtils helpers
+    │   └── service/               # Core business logic services
+    ├── pom.xml
+    └── application.properties
 ```
 
-## API Foundation
+---
 
-The current backend exposes functionality around:
+## 2. Authentication & Authorization Model
 
-- `/api/users`
-- `/api/auth/login`
-- `/api/communities`
-- Community membership endpoints
-- Community member endpoints
+ThreadHub uses **Spring Security** with **OAuth2 Resource Server** and **JWT (JSON Web Tokens)** signed using HMAC-SHA256 (`HS256`).
 
-Authentication uses JWT bearer tokens for protected endpoints.
+- **Authentication Flow**:
+  1. Clients authenticate via `POST /api/auth/login` with email and password.
+  2. The server returns a JWT access token valid for 24 hours (86,400,000 ms).
+  3. Clients attach the token to subsequent requests using the standard header: `Authorization: Bearer <token>`.
 
-## Known Issues / Areas to Fix
+- **Access Policy**:
+  - **Public Endpoints**:
+    - `POST /api/users` (User registration)
+    - `POST /api/auth/login` (User login)
+    - `GET /api/communities` (List all communities)
+    - `GET /api/communities/{id}` (Get community details)
+    - `GET /api/communities/name/{name}` (Get community by name)
+    - `GET /api/communities/{id}/members` (List community members)
+  - **Protected Endpoints** (Requires valid Bearer token):
+    - `GET /api/users/{id}` (User profile lookup)
+    - `POST /api/communities` (Create new community)
+    - `POST /api/communities/{id}/join` (Join community)
+    - `DELETE /api/communities/{id}/leave` (Leave community)
+    - `GET /api/communities/{id}/membership` (Get current user membership status)
 
-These are not blockers for the current deployment, but they are the obvious engineering work remaining.
+---
 
-### Backend
+## 3. Environment Variables & Setup
 
-- Replace `spring.jpa.hibernate.ddl-auto=update` with a proper database migration strategy such as Flyway or Liquibase.
-- Improve API error handling and standardize error response DTOs.
-- Add stronger validation rules for usernames, emails, passwords, community names, and community descriptions.
-- Review authorization rules for every endpoint as new resources are introduced.
-- Add pagination to endpoints that can return large collections.
-- Add database indexes where query patterns require them.
-- Replace hard-coded configuration values with environment-based configuration where appropriate.
-- Disable or reduce SQL logging in production.
-- Add production-oriented observability and structured logging.
-- Add rate limiting for authentication endpoints.
-- Improve automated integration-test coverage against PostgreSQL.
+### Backend Environment Variables (`./threadhub/.env`)
 
-### Frontend
+| Variable Name | Description | Example / Default |
+|---------------|-------------|-------------------|
+| `DB_URL` | PostgreSQL JDBC connection URL | `jdbc:postgresql://localhost:5432/threadhub` |
+| `DB_USERNAME` | PostgreSQL database user | `threadhub_user` |
+| `DB_PASSWORD` | PostgreSQL database password | `threadhub_dev` |
+| `JWT_SECRET` | 256-bit (32+ byte) secret key | `404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970` |
 
-- Improve loading, error, and empty states across all pages.
-- Add form-level validation and better API error messages.
-- Improve responsive behavior across mobile and desktop.
-- Add reusable UI components as the application grows.
-- Improve accessibility, keyboard navigation, and semantic HTML.
-- Add frontend tests.
-- Improve token/session handling and account state recovery.
-- Add a production-ready error boundary.
-
-### Deployment
-
-- Add a custom domain.
-- Configure stricter production CORS once all required frontend origins are known.
-- Add deployment health checks and monitoring.
-- Configure separate development, staging, and production environments.
-- Add CI checks for tests and builds before merging to `main`.
-
-## Planned Features
-
-Users
-  ↓
-Communities
-  ↓
-Posts          ← NEXT
-  ↓
-Comments
-  ↓
-Voting
-  ↓
-Home / Community Feed
-  ↓
-Profiles
-  ↓
-Search
-  ↓
-Notifications
-  ↓
-Moderation
-
-## Security Improvements
-
-Security is treated as a core part of the project rather than decorative vocabulary for a README.
-
-Planned improvements include:
-
-- Refresh-token based authentication
-- Token revocation strategy
-- Rate limiting
-- Brute-force protection
-- Stronger password policies
-- Email verification
-- Password reset flow
-- Account lockout policies
-- Security headers
-- Input sanitization
-- Comprehensive authorization tests
-- Audit logging for sensitive operations
-
-## Testing
-
-The backend currently has automated tests covering the implemented user, authentication, and community functionality.
-
-Run backend tests from the backend directory:
-
-```bash
-./mvnw clean test
-```
-
-Build the frontend:
-
-```bash
-cd frontend
-npm install
-npm run build
-```
-
-## Environment Variables
-
-### Backend
-
-```env
-DB_URL=jdbc:postgresql://localhost:5432/threadhub
-DB_USERNAME=threadhub_user
-DB_PASSWORD=your_database_password
-JWT_SECRET=your_32_byte_or_longer_secret
-```
-
-### Frontend
+### Frontend Environment Variables (`./frontend/.env`)
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
-Do not commit real credentials, database passwords, JWT secrets, or production environment files.
+---
 
-## Development
+## 4. How to Run & Test
 
-### Start the Backend
-
+### Backend (Spring Boot)
 ```bash
 cd threadhub
+
+# Run test suite
+DB_URL=jdbc:postgresql://localhost:5432/threadhub \
+DB_USERNAME=threadhub_user \
+DB_PASSWORD=threadhub_dev \
+JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970 \
+./mvnw test
+
+# Start backend server
+DB_URL=jdbc:postgresql://localhost:5432/threadhub \
+DB_USERNAME=threadhub_user \
+DB_PASSWORD=threadhub_dev \
+JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970 \
 ./mvnw spring-boot:run
 ```
 
-The backend runs on:
-
-```text
-http://localhost:8080
-```
-
-### Start the Frontend
-
+### Frontend (React / Vite)
 ```bash
 cd frontend
+
+# Install dependencies
 npm install
+
+# Run Oxlint linter
+npm run lint
+
+# Build production bundle
+npm run build
+
+# Start dev server
 npm run dev
 ```
 
-The frontend runs on:
+---
 
-```text
-http://localhost:5173
+## 5. Standard Error Response Convention
+
+All application-level API errors return a standardized `ErrorResponse` payload:
+
+```json
+{
+  "timestamp": "2026-10-10T12:00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "details": [
+    "Username must be between 3 and 50 characters",
+    "Invalid email format"
+  ]
+}
 ```
+
+### Standard Status Codes
+- `400 Bad Request`: Validation failure, malformed JSON body, invalid path parameter type, business rule violation.
+- `401 Unauthorized`: Missing authentication, expired token, invalid token signature, invalid login credentials.
+- `403 Forbidden`: Access denied.
+- `404 Not Found`: User or Community resource not found.
+- `409 Conflict`: Duplicate username, duplicate email, duplicate community name, or already a member.
+- `500 Internal Server Error`: Generic unhandled server-side failure (log trace suppressed from client output).
+
+---
+
+## 6. Guidelines for External Contributors
+
+When implementing reserved issues:
+- **Issue #1**: Post CRUD APIs
+- **Issue #2**: Home and Community Feeds
+- **Issue #3**: Comments & Replies
+- **Issue #4**: Post Voting
+- **Issue #5**: User Profiles
+
+**Rules**:
+1. Keep controllers thin; execute business logic in transaction-scoped `@Service` classes.
+2. Define request validation rules on DTO classes (`@Valid @RequestBody`), never directly on entity objects.
+3. Derive identity from `SecurityUtils.getCurrentUserId()` rather than accepting trusted client user IDs.
+4. Ensure all new endpoints register appropriate exception handling in `GlobalExceptionHandler`.
+5. Maintain unit and integration test coverage for both success and error paths.
+
+---
 
 ## Technology Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | React |
-| Build Tool | Vite |
-| Styling | Tailwind CSS |
-| Routing | React Router |
+| Frontend | React 19 |
+| Build Tool | Vite 8 |
+| Styling | Tailwind CSS v4 |
+| Routing | React Router v7 |
 | Backend | Spring Boot 4.1.1 |
 | Language | Java 25 |
 | Security | Spring Security + JWT |
 | ORM | Spring Data JPA + Hibernate |
 | Database | PostgreSQL |
-| Local DB | PostgreSQL |
 | Production DB | Neon PostgreSQL |
 | Backend Hosting | Railway |
 | Frontend Hosting | Vercel |
-| Build | Maven |
-| Version Control | Git + GitHub |
-
-## Roadmap
-
-```text
-[x] Project foundation
-[x] User registration
-[x] Password hashing
-[x] JWT authentication
-[x] Community creation
-[x] Community membership
-[x] Frontend authentication
-[x] Frontend community UI
-[x] Production backend deployment
-[x] Production frontend deployment
-[ ] Posts
-[ ] Comments
-[ ] Voting
-[ ] User profiles
-[ ] Feed system
-[ ] Moderation
-[ ] Notifications
-[ ] Search
-[ ] Advanced security
-```
-### Issues
-
-## License
-
-This project is currently under active development. Add a formal open-source license before treating the repository as a publicly licensed project.
+| Build System | Maven |
+| CI Pipeline | GitHub Actions |

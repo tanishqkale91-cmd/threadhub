@@ -24,6 +24,7 @@ public class User {
     private String username;
 
     @Column(nullable = false, unique = true)
+
     private String email;
 
     @Column(nullable = false)
@@ -34,6 +35,7 @@ public class User {
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }

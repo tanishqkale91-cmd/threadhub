@@ -118,4 +118,17 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.message").value("Invalid email or password"));
     }
+
+    @Test
+    @DisplayName("POST /api/auth/login - Should return 400 Bad Request when JSON request body is malformed")
+    void shouldReturnBadRequestWhenJsonIsMalformed() throws Exception {
+        String malformedJson = "{ \"email\": \"jane@example.com\", \"password\": }";
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(malformedJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Malformed JSON request body"));
+    }
 }

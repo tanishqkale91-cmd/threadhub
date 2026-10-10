@@ -150,6 +150,20 @@ class CommunityControllerTest {
     }
 
     @Test
+    @DisplayName("POST /api/communities - Should return 400 Bad Request when JSON request body is malformed")
+    void shouldReturnBadRequestWhenJsonIsMalformed() throws Exception {
+        String malformedJson = "{ \"name\": \"spring\", \"description\": }";
+
+        mockMvc.perform(post("/api/communities")
+                        .header("Authorization", "Bearer " + validJwtToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(malformedJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Malformed JSON request body"));
+    }
+
+    @Test
     @DisplayName("GET /api/communities - Should permit public access to list communities")
     void shouldAllowPublicCommunityListing() throws Exception {
         when(communityService.getAllCommunities()).thenReturn(List.of(sampleCommunityResponse));
@@ -167,6 +181,16 @@ class CommunityControllerTest {
         mockMvc.perform(get("/api/communities/99"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    @DisplayName("GET /api/communities/{id} - Should return 400 Bad Request when path parameter type is invalid")
+    void shouldReturnBadRequestOnTypeMismatch() throws Exception {
+        mockMvc.perform(get("/api/communities/invalid-id")
+                        .header("Authorization", "Bearer " + validJwtToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Invalid parameter type for: id"));
     }
 
     @Test

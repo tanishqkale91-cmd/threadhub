@@ -103,6 +103,22 @@ public CorsConfigurationSource corsConfigurationSource() {
                         .requestMatchers(HttpMethod.GET, "/api/communities/{communityId:\\d+}/members").permitAll()
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.getWriter().write("""
+                                {"timestamp":"%s","status":401,"error":"Unauthorized","message":"Authentication required"}
+                                """.formatted(LocalDateTime.now()));
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.getWriter().write("""
+                                {"timestamp":"%s","status":403,"error":"Forbidden","message":"Access denied"}
+                                """.formatted(LocalDateTime.now()));
+                        })
+                )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.decoder(jwtDecoder))
                         .authenticationEntryPoint((request, response, authException) -> {
@@ -110,6 +126,13 @@ public CorsConfigurationSource corsConfigurationSource() {
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.getWriter().write("""
                                 {"timestamp":"%s","status":401,"error":"Unauthorized","message":"Authentication required"}
+                                """.formatted(LocalDateTime.now()));
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpStatus.FORBIDDEN.value());
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.getWriter().write("""
+                                {"timestamp":"%s","status":403,"error":"Forbidden","message":"Access denied"}
                                 """.formatted(LocalDateTime.now()));
                         })
                 );
